@@ -1,7 +1,10 @@
-const CACHE = 'jewel-calc-v1';
+const CACHE = 'jewel-calc-v2';
 const FILES = [
-  './jeweller-calculator.html',
-  './manifest.json'
+  './',
+  './index.html',
+  './manifest.json',
+  './icon-192.png',
+  './icon-512.png'
 ];
 
 self.addEventListener('install', e => {
@@ -22,6 +25,13 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(r => r || fetch(e.request).catch(() => caches.match('./jeweller-calculator.html')))
+    caches.match(e.request).then(r => {
+      if(r) return r;
+      return fetch(e.request).then(res => {
+        const clone = res.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return res;
+      }).catch(() => caches.match('./index.html'));
+    })
   );
 });
