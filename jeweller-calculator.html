@@ -1,0 +1,877 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Jewel Calc">
+<meta name="theme-color" content="#EF9F27">
+<link rel="manifest" href="manifest.json">
+<!-- Apple touch icons -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Jewellery Calculator</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --amber:#EF9F27;--amber-dark:#BA7517;--amber-bg:#FAEEDA;
+  --bg:#f5f4f0;--card:#fff;--border:#e5e3db;--border2:#ccc;
+  --text:#1a1a18;--text2:#6b6a65;--text3:#aaa;
+  --green:#27500A;--green-bg:#EAF3DE;
+  --red:#791F1F;--red-bg:#FCEBEB;
+  --radius:10px;--radius-lg:14px;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* HEADER */
+.header{background:var(--amber);padding:14px 16px 12px;position:sticky;top:0;z-index:10}
+.header-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.header h1{font-size:17px;font-weight:700;color:#412402}
+.tabs{display:flex;gap:4px;background:rgba(0,0,0,.12);border-radius:10px;padding:3px}
+.tab{flex:1;padding:7px 4px;font-size:12px;font-weight:600;border:none;background:transparent;color:rgba(65,36,2,.7);cursor:pointer;border-radius:8px;text-align:center}
+.tab.active{background:#fff;color:var(--amber-dark)}
+
+/* CONTENT */
+.content{padding:12px;padding-bottom:32px;max-width:480px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+
+/* CARDS */
+.card{background:var(--card);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.card-title{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+
+/* FORM */
+.fg{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.fg label{font-size:12px;font-weight:600;color:var(--text2)}
+.fg input,.fg select{width:100%;padding:10px 12px;font-size:15px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--card);color:var(--text);appearance:none;-webkit-appearance:none}
+.fg input:focus,.fg select:focus{outline:none;border-color:var(--amber)}
+.fg input[readonly]{background:#faf9f6;color:var(--text2);border-color:var(--border)}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+
+/* MAKING TOGGLE */
+.seg{display:flex;gap:2px;background:#f0efe9;border-radius:var(--radius);padding:3px;margin-bottom:10px}
+.seg-btn{flex:1;padding:8px 4px;font-size:12px;font-weight:600;border:none;background:transparent;color:var(--text2);cursor:pointer;border-radius:8px;text-align:center}
+.seg-btn.on{background:var(--card);color:var(--text);border:1px solid var(--border)}
+
+/* DYNAMIC ROWS */
+.drow{display:grid;grid-template-columns:1fr 1fr 1fr 36px;gap:6px;align-items:end;margin-bottom:8px}
+.srow{display:grid;grid-template-columns:1fr 1fr 36px;gap:6px;align-items:end;margin-bottom:8px}
+.drow input,.srow input{padding:9px 10px;font-size:13px;border:1.5px solid var(--border2);border-radius:var(--radius);background:var(--card);color:var(--text);width:100%}
+.drow input[readonly]{background:#faf9f6;color:var(--text2);border-color:var(--border)}
+.rm-btn{width:36px;height:40px;background:var(--red-bg);color:var(--red);border:none;border-radius:var(--radius);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* ADD BUTTON */
+.add-btn{width:100%;padding:10px;font-size:13px;font-weight:600;border:1.5px dashed var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;margin-bottom:10px}
+.add-btn:active{background:#faf9f6}
+
+/* DIVIDER */
+.divider{border:none;border-top:1px solid var(--border);margin:12px 0}
+
+/* RESULT BOX */
+.result-box{background:#faf9f6;border-radius:var(--radius);padding:12px;border:1px solid var(--border);margin-top:4px}
+.res-row{display:flex;justify-content:space-between;padding:4px 0;font-size:13px}
+.res-row .rl{color:var(--text2)}
+.res-row .rv{font-weight:600}
+.res-total{display:flex;justify-content:space-between;padding:10px 0 4px;border-top:1.5px solid var(--border);margin-top:6px}
+.res-total .rl{font-size:15px;font-weight:700}
+.res-total .rv{font-size:20px;font-weight:700;color:var(--amber-dark)}
+
+/* GST TOGGLE */
+.gst-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;margin-bottom:4px}
+.gst-lbl{font-size:13px;font-weight:600;color:var(--text2)}
+.tgl{position:relative;display:inline-block;width:44px;height:24px}
+.tgl input{opacity:0;width:0;height:0}
+.tgl-sl{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:24px;transition:.2s}
+.tgl-sl:before{content:'';position:absolute;width:18px;height:18px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
+input:checked+.tgl-sl{background:var(--amber)}
+input:checked+.tgl-sl:before{transform:translateX(20px)}
+
+/* ACTION BUTTONS */
+.btn-row{display:flex;gap:8px;margin-top:12px}
+.btn-primary{flex:1;padding:13px;font-size:14px;font-weight:700;border:none;border-radius:var(--radius);background:var(--amber);color:#412402;cursor:pointer}
+.btn-primary:active{background:var(--amber-dark);color:#fff}
+.btn-clear{padding:13px 16px;font-size:14px;font-weight:600;border:1.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer}
+.btn-clear:active{background:#faf9f6}
+
+/* INVOICE */
+.inv-item{background:#faf9f6;border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);position:relative}
+.inv-item-title{font-size:13px;font-weight:600;margin-bottom:2px}
+.inv-item-sub{font-size:11px;color:var(--text2)}
+.inv-item-total{font-size:15px;font-weight:700;color:var(--amber-dark);margin-top:4px}
+.inv-rm{position:absolute;top:8px;right:8px;background:var(--red-bg);color:var(--red);border:none;border-radius:6px;padding:3px 8px;font-size:12px;cursor:pointer}
+.grand-box{background:var(--amber-bg);border-radius:var(--radius-lg);padding:16px;text-align:center;margin-top:4px}
+.grand-lbl{font-size:12px;color:var(--amber-dark);font-weight:600;margin-bottom:4px}
+.grand-val{font-size:28px;font-weight:700;color:var(--amber-dark)}
+.grand-sub{font-size:12px;color:var(--amber-dark);margin-top:2px}
+.gst-all-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.empty{text-align:center;color:var(--text3);padding:32px 0;font-size:13px}
+.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;display:inline-block}
+.b-g{background:#EAF3DE;color:#27500A}
+.b-r{background:#FCEBEB;color:#791F1F}
+
+/* PURITY BUTTONS */
+.pur-seg{display:flex;gap:6px;margin-bottom:10px}
+.pur-btn{flex:1;padding:9px 4px;font-size:13px;font-weight:700;border:1.5px solid var(--border2);border-radius:var(--radius);background:transparent;color:var(--text2);cursor:pointer;text-align:center}
+.pur-btn.on{background:#FAC775;color:#412402;border-color:#BA7517}
+
+/* RATE CONVERTER */
+.rate-conv{background:linear-gradient(135deg,#FAEEDA,#FAC775);border-radius:var(--radius-lg);padding:14px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.rate-conv-title{font-size:11px;font-weight:700;color:#633806;text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+.rate-input-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:12px}
+.rate-input-row input{flex:1;padding:10px 12px;font-size:18px;font-weight:700;border:1.5px solid #BA7517;border-radius:var(--radius);background:rgba(255,255,255,.8);color:#412402}
+.rate-input-row label{font-size:11px;font-weight:700;color:#633806;white-space:nowrap;padding-bottom:12px}
+.rate-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.rate-box{background:rgba(255,255,255,.75);border-radius:var(--radius);padding:10px 8px;text-align:center;cursor:pointer;border:2px solid transparent;transition:.15s}
+.rate-box:active{background:rgba(255,255,255,1);border-color:#BA7517}
+.rate-box .kt{font-size:11px;font-weight:700;color:#633806;margin-bottom:4px}
+.rate-box .rv{font-size:14px;font-weight:700;color:#412402}
+.rate-box .pct{font-size:10px;color:#854F0B;margin-bottom:6px}
+.rate-box .adj{display:flex;gap:4px;justify-content:center;margin-top:6px}
+.adj{display:flex;gap:3px;justify-content:center;margin-top:6px;flex-wrap:wrap}
+.adj-btn{padding:4px 5px;border:1px solid #BA7517;border-radius:6px;background:rgba(255,255,255,.6);color:#412402;font-size:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+.adj-btn:active{background:#BA7517;color:#fff}
+.use-btn{width:100%;padding:7px;font-size:11px;font-weight:700;border:1.5px solid #BA7517;border-radius:6px;background:transparent;color:#633806;cursor:pointer;margin-top:6px}
+.use-btn:active{background:#BA7517;color:#fff}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <h1>💎 Jewel Calculator</h1>
+  </div>
+  <div class="tabs">
+    <button class="tab active" onclick="sw('diamond',this)">Diamond</button>
+    <button class="tab" onclick="sw('gold',this)">Gold</button>
+    <button class="tab" onclick="sw('invoice',this)">Invoice</button>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- ===== DIAMOND ===== -->
+<div class="panel active" id="p-diamond">
+
+  <!-- RATE CONVERTER -->
+  <div class="rate-conv">
+    <div class="rate-conv-title">🟡 Gold Rate Calculator</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#633806;margin-bottom:5px">24K rate (₹ per 10g)</div>
+      <input type="number" id="rc-24" inputmode="decimal" placeholder="e.g. 94500" oninput="calcRates()" style="width:100%;padding:11px 12px;font-size:18px;font-weight:700;border:1.5px solid #BA7517;border-radius:var(--radius);background:rgba(255,255,255,.85);color:#412402">
+    </div>
+    <div class="rate-grid">
+      <div class="rate-box">
+        <div class="kt">22 KT</div>
+        <div class="pct">92%</div>
+        <div class="rv" id="rc-22">—</div>
+      </div>
+      <div class="rate-box">
+        <div class="kt">18 KT</div>
+        <div class="pct">76%</div>
+        <div class="rv" id="rc-18">—</div>
+      </div>
+      <div class="rate-box">
+        <div class="kt">14 KT</div>
+        <div class="pct">60%</div>
+        <div class="rv" id="rc-14">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px">
+      <button class="use-btn" onclick="useRate(22)">Use 22K →</button>
+      <button class="use-btn" onclick="useRate(18)">Use 18K →</button>
+      <button class="use-btn" onclick="useRate(14)">Use 14K →</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Diamonds</div>
+    <div class="row3 col-hdr" style="margin-bottom:4px">
+      <span>Rate (₹/ct)</span><span>Weight (ct)</span><span>Value</span>
+    </div>
+    <div id="d-rows"></div>
+    <button class="add-btn" onclick="addDRow()">+ Add diamond</button>
+    <div class="dtotal-row">Diamond total: <strong id="d-dtotal" style="margin-left:6px">₹0</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Gold in piece — Purity</div>
+    <div class="pur-seg" id="d-pur-seg">
+      <button class="pur-btn on" onclick="setPur('d',22,this)">22K</button>
+      <button class="pur-btn" onclick="setPur('d',18,this)">18K</button>
+      <button class="pur-btn" onclick="setPur('d',14,this)">14K</button>
+    </div>
+    <div class="row3">
+      <div class="fg" style="margin:0"><label>Rate (₹/g)</label><input type="number" id="d-grate" inputmode="decimal" placeholder="0" oninput="calcD()"></div>
+      <div class="fg" style="margin:0"><label>Weight (g)</label><input type="number" id="d-gwt" inputmode="decimal" placeholder="0.00" step="0.01" oninput="calcD()"></div>
+      <div class="fg" style="margin:0"><label>Gold val</label><input id="d-gval" readonly></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Making charges</div>
+    <div class="seg">
+      <button class="seg-btn on" id="d-pg-btn" onclick="setDM('pg',this)">Per gram</button>
+      <button class="seg-btn" id="d-pct-btn" onclick="setDM('pct',this)">Percentage %</button>
+      <button class="seg-btn" id="d-tnch-btn" onclick="setDM('tunch',this)">Tunch</button>
+    </div>
+    <div class="row2">
+      <div class="fg" id="d-pg-wrap" style="margin:0"><label>Labour (₹/g)</label><input type="number" id="d-labour" inputmode="decimal" placeholder="0" oninput="calcD()"></div>
+      <div class="fg" id="d-pct-wrap" style="display:none;margin:0"><label>Making %</label><input type="number" id="d-mpct" inputmode="decimal" placeholder="0" step="0.1" oninput="calcD()"></div>
+      <div class="fg" id="d-tunch-wrap" style="display:none;margin:0"><label>Tunch %</label><input type="number" id="d-tpct" inputmode="decimal" placeholder="e.g. 100" step="0.1" oninput="calcD()"></div>
+      <div class="fg" style="margin:0"><label id="d-mval-lbl">Making val</label><input id="d-mval" readonly></div>
+    </div>
+    <div id="d-tunch-rate-row" style="display:none;margin-top:6px">
+      <div class="fg" style="margin:0"><label>24K rate (₹/g) for tunch</label>
+        <input type="number" id="d-trate" inputmode="decimal" placeholder="e.g. 15870" oninput="calcD()" style="border-color:#BA7517">
+        <div style="font-size:10px;color:var(--text2);margin-top:3px">Formula: 24K rate × weight × tunch%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stones <span style="font-weight:400;font-size:10px">(optional)</span></div>
+    <div id="d-srows"></div>
+    <button class="add-btn" onclick="addDSRow()">+ Add stone</button>
+    <div id="d-stotal-row" style="display:none" class="dtotal-row">Stone total: <strong id="d-stotal" style="margin-left:6px">₹0</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="gst-row">
+      <span class="gst-lbl">Include GST 3%</span>
+      <label class="tgl"><input type="checkbox" id="d-gst" onchange="calcD()"><span class="tgl-sl"></span></label>
+    </div>
+    <div class="result-box">
+      <div class="res-row"><span class="rl">Diamond value</span><span class="rv" id="dr-dval">₹0</span></div>
+      <div class="res-row"><span class="rl">Gold value</span><span class="rv" id="dr-gval">₹0</span></div>
+      <div class="res-row"><span class="rl" id="dr-mlbl">Making charges</span><span class="rv" id="dr-mval">₹0</span></div>
+      <div class="res-row" id="dr-srow" style="display:none"><span class="rl">Stone charges</span><span class="rv" id="dr-sval">₹0</span></div>
+      <div class="res-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><span class="rl">Subtotal</span><span class="rv" id="dr-sub">₹0</span></div>
+      <div class="res-row" id="dr-gst-row" style="display:none"><span class="rl">GST 3%</span><span class="rv" style="color:var(--amber-dark)" id="dr-gst">₹0</span></div>
+      <div class="res-total"><span class="rl">Total</span><span class="rv" id="dr-total">₹0</span></div>
+    </div>
+    <div class="fg" style="margin:10px 0 0">
+      <label>Item description (optional)</label>
+      <input type="text" id="d-item-desc" placeholder="e.g. Gold necklace, Diamond ring..." style="font-size:13px;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--radius)">
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="addToInv('diamond')">+ Add to invoice</button>
+      <button class="btn-clear" onclick="clearD()">↺</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== GOLD ===== -->
+<div class="panel" id="p-gold">
+
+  <!-- RATE CONVERTER (same, shared state) -->
+  <div class="rate-conv">
+    <div class="rate-conv-title">🟡 Gold Rate Calculator</div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:11px;font-weight:700;color:#633806;margin-bottom:5px">24K rate (₹ per 10g)</div>
+      <input type="number" id="rc-24b" inputmode="decimal" placeholder="e.g. 94500" oninput="calcRatesB()" style="width:100%;padding:11px 12px;font-size:18px;font-weight:700;border:1.5px solid #BA7517;border-radius:var(--radius);background:rgba(255,255,255,.85);color:#412402">
+    </div>
+    <div class="rate-grid">
+      <div class="rate-box">
+        <div class="kt">22 KT</div><div class="pct">92%</div>
+        <div class="rv" id="rc-22b">—</div>
+      </div>
+      <div class="rate-box">
+        <div class="kt">18 KT</div><div class="pct">76%</div>
+        <div class="rv" id="rc-18b">—</div>
+      </div>
+      <div class="rate-box">
+        <div class="kt">14 KT</div><div class="pct">60%</div>
+        <div class="rv" id="rc-14b">—</div>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:8px">
+      <button class="use-btn" onclick="useRateG(22)">Use 22K →</button>
+      <button class="use-btn" onclick="useRateG(18)">Use 18K →</button>
+      <button class="use-btn" onclick="useRateG(14)">Use 14K →</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Gold — Purity</div>
+    <div class="pur-seg" id="g-pur-seg">
+      <button class="pur-btn on" onclick="setPur('g',22,this)">22K</button>
+      <button class="pur-btn" onclick="setPur('g',18,this)">18K</button>
+      <button class="pur-btn" onclick="setPur('g',14,this)">14K</button>
+    </div>
+    <div class="row3">
+      <div class="fg" style="margin:0"><label>Rate (₹/g)</label><input type="number" id="g-rate" inputmode="decimal" placeholder="0" oninput="calcG()"></div>
+      <div class="fg" style="margin:0"><label>Weight (g)</label><input type="number" id="g-wt" inputmode="decimal" placeholder="0.00" step="0.01" oninput="calcG()"></div>
+      <div class="fg" style="margin:0"><label>Gold val</label><input id="g-gval" readonly></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Making charges</div>
+    <div class="seg">
+      <button class="seg-btn on" id="g-pg-btn" onclick="setGM('pg',this)">Per gram</button>
+      <button class="seg-btn" id="g-pct-btn" onclick="setGM('pct',this)">Percentage %</button>
+      <button class="seg-btn" id="g-tnch-btn" onclick="setGM('tunch',this)">Tunch</button>
+    </div>
+    <div class="row2">
+      <div class="fg" id="g-pg-wrap" style="margin:0"><label>Labour (₹/g)</label><input type="number" id="g-labour" inputmode="decimal" placeholder="0" oninput="calcG()"></div>
+      <div class="fg" id="g-pct-wrap" style="display:none;margin:0"><label>Making %</label><input type="number" id="g-mpct" inputmode="decimal" placeholder="0" step="0.1" oninput="calcG()"></div>
+      <div class="fg" id="g-tunch-wrap" style="display:none;margin:0"><label>Tunch %</label><input type="number" id="g-tpct" inputmode="decimal" placeholder="e.g. 100" step="0.1" oninput="calcG()"></div>
+      <div class="fg" style="margin:0"><label id="g-mval-lbl">Making val</label><input id="g-mval" readonly></div>
+    </div>
+    <div id="g-tunch-rate-row" style="display:none;margin-top:6px">
+      <div class="fg" style="margin:0"><label>24K rate (₹/g) for tunch</label>
+        <input type="number" id="g-trate" inputmode="decimal" placeholder="e.g. 15870" oninput="calcG()" style="border-color:#BA7517">
+        <div style="font-size:10px;color:var(--text2);margin-top:3px">Formula: 24K rate × weight × tunch%</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Stones <span style="font-weight:400;font-size:10px">(optional)</span></div>
+    <div id="g-srows"></div>
+    <button class="add-btn" onclick="addGSRow()">+ Add stone</button>
+    <div id="g-stotal-row" style="display:none" class="dtotal-row">Stone total: <strong id="g-stotal" style="margin-left:6px">₹0</strong></div>
+  </div>
+
+  <div class="card">
+    <div class="gst-row">
+      <span class="gst-lbl">Include GST 3%</span>
+      <label class="tgl"><input type="checkbox" id="g-gst" onchange="calcG()"><span class="tgl-sl"></span></label>
+    </div>
+    <div class="result-box">
+      <div class="res-row"><span class="rl">Gold value</span><span class="rv" id="gr-gval">₹0</span></div>
+      <div class="res-row"><span class="rl" id="gr-mlbl">Making charges</span><span class="rv" id="gr-mval">₹0</span></div>
+      <div class="res-row" id="gr-srow" style="display:none"><span class="rl">Stone charges</span><span class="rv" id="gr-sval">₹0</span></div>
+      <div class="res-row" style="border-top:1px solid var(--border);margin-top:4px;padding-top:6px"><span class="rl">Subtotal</span><span class="rv" id="gr-sub">₹0</span></div>
+      <div class="res-row" id="gr-gst-row" style="display:none"><span class="rl">GST 3%</span><span class="rv" style="color:var(--amber-dark)" id="gr-gst">₹0</span></div>
+      <div class="res-total"><span class="rl">Total</span><span class="rv" id="gr-total">₹0</span></div>
+    </div>
+    <div class="fg" style="margin:10px 0 0">
+      <label>Item description (optional)</label>
+      <input type="text" id="g-item-desc" placeholder="e.g. Gold necklace, Bangle..." style="font-size:13px;padding:9px 12px;border:1.5px solid var(--border2);border-radius:var(--radius)">
+    </div>
+    <div class="btn-row">
+      <button class="btn-primary" onclick="addToInv('gold')">+ Add to invoice</button>
+      <button class="btn-clear" onclick="clearG()">↺</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== INVOICE ===== -->
+<div class="panel" id="p-invoice">
+  <div class="card">
+    <div class="gst-all-row">
+      <span style="font-size:13px;font-weight:600">GST 3% on all items</span>
+      <label class="tgl"><input type="checkbox" id="inv-gst-all" onchange="renderInv()"><span class="tgl-sl"></span></label>
+    </div>
+    <div id="inv-list"><div class="empty">No items yet — add from Diamond or Gold tab</div></div>
+  </div>
+  <div id="inv-grand-card" style="display:none">
+    <div class="grand-box">
+      <div class="grand-lbl">Grand Total</div>
+      <div class="grand-val" id="inv-grand">₹0</div>
+      <div class="grand-sub" id="inv-sub-detail"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">
+      <button class="btn-primary" onclick="shareInvoice()" style="padding:13px;font-size:14px">📤 Share / Save</button>
+      <button class="btn-clear" style="padding:13px;border-radius:var(--radius)" onclick="invItems.length=0;renderInv()">🗑 Clear all</button>
+    </div>
+  </div>
+</div>
+
+<!-- INVOICE PREVIEW (hidden, used for PDF/image generation) -->
+<div id="inv-preview" style="display:none;position:fixed;left:-9999px;top:0;width:360px;background:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:24px;box-sizing:border-box">
+  <div style="text-align:center;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;color:#BA7517;letter-spacing:1px;text-transform:uppercase;border:1.5px solid #BA7517;display:inline-block;padding:3px 14px;border-radius:20px;margin-bottom:8px">Rough Estimate</div>
+    <div style="font-size:18px;font-weight:700;color:#1a1a18">Jewellery Estimate</div>
+    <div style="font-size:11px;color:#6b6a65;margin-top:3px" id="prev-date"></div>
+  </div>
+  <div style="border-top:1px solid #e5e3db;border-bottom:1px solid #e5e3db;margin-bottom:14px">
+    <div id="prev-items"></div>
+  </div>
+  <div id="prev-totals" style="margin-bottom:14px"></div>
+  <div style="background:#FAEEDA;border-radius:10px;padding:12px 16px;text-align:center;margin-bottom:16px">
+    <div style="font-size:11px;font-weight:700;color:#BA7517;margin-bottom:3px">Grand Total</div>
+    <div style="font-size:26px;font-weight:700;color:#412402" id="prev-grand">₹0</div>
+    <div style="font-size:10px;color:#854F0B;margin-top:2px" id="prev-gst-note"></div>
+  </div>
+  <div style="font-size:10px;color:#aaa;text-align:center;border-top:1px solid #e5e3db;padding-top:10px">
+    ⚠️ This is a rough estimate only. Final price may vary.<br>Prices subject to change based on gold rate fluctuations.
+  </div>
+</div>
+
+</div>
+
+<script>
+// ===== RATE CONVERTER =====
+const PCT={22:0.92,18:0.76,14:0.60};
+let purSel={d:22,g:22};
+
+function calcRates(){
+  const v24=parseFloat(document.getElementById('rc-24').value)||0;
+  [22,18,14].forEach(kt=>{
+    const raw=v24*PCT[kt];                    // 158700 × 92% = 146004
+    const rounded=Math.round(raw/100)*100;    // ROUND(-2) = 146000
+    const per_g=rounded/10;                   // ÷10 = 14600/g
+    const el=document.getElementById('rc-'+kt);
+    if(el){el.textContent=per_g?'₹'+per_g.toLocaleString('en-IN')+'/g':'—';el._val=per_g;}
+    const elB=document.getElementById('rc-'+kt+'b');
+    if(elB){elB.textContent=per_g?'₹'+per_g.toLocaleString('en-IN')+'/g':'—';elB._val=per_g;}
+  });
+  const b=document.getElementById('rc-24b');if(b&&b!==document.activeElement)b.value=document.getElementById('rc-24').value;
+}
+
+function calcRatesB(){
+  const v24=parseFloat(document.getElementById('rc-24b').value)||0;
+  const a=document.getElementById('rc-24');if(a&&a!==document.activeElement)a.value=v24||'';
+  calcRates();
+}
+
+function useRate(kt){
+  const el=document.getElementById('rc-'+kt);
+  if(!el||!el._val)return;
+  document.getElementById('d-grate').value=el._val;
+  setPurHighlight('d',kt);calcD();
+}
+function useRateG(kt){
+  const el=document.getElementById('rc-'+kt);
+  if(!el||!el._val)return;
+  document.getElementById('g-rate').value=el._val;
+  setPurHighlight('g',kt);calcG();
+}
+
+function setPur(pfx,kt,el){
+  purSel[pfx]=kt;
+  setPurHighlight(pfx,kt);
+  const making=pfx==='d'?dMaking:gMaking;
+  // Only fill the gold rate field if NOT in tunch mode
+  // In tunch mode, 24K rate is used separately — purity buttons don't affect it
+  if(making!=='tunch'){
+    const rcEl=document.getElementById('rc-'+kt);
+    if(rcEl&&rcEl._val){
+      const id=pfx==='d'?'d-grate':'g-rate';
+      document.getElementById(id).value=rcEl._val;
+    }
+  }
+  // For tunch: auto-fill 24K rate from converter (per gram) if empty
+  const rc24=document.getElementById('rc-24');
+  if(rc24&&rc24.value){
+    const per_g=parseFloat(rc24.value)/10;
+    const tid=pfx==='d'?'d-trate':'g-trate';
+    const te=document.getElementById(tid);
+    if(te&&!te.value)te.value=per_g||'';
+  }
+  if(pfx==='d')calcD();else calcG();
+}
+
+function setPurHighlight(pfx,kt){
+  document.querySelectorAll('#'+pfx+'-pur-seg .pur-btn').forEach(b=>b.classList.remove('on'));
+  const btns=document.querySelectorAll('#'+pfx+'-pur-seg .pur-btn');
+  const map={22:0,18:1,14:2};
+  if(btns[map[kt]])btns[map[kt]].classList.add('on');
+  purSel[pfx]=kt;
+}
+
+// ===== DIAMOND ROWS =====
+const fmt=n=>'₹'+Math.round(n).toLocaleString('en-IN');
+const fv=id=>parseFloat(document.getElementById(id)?.value)||0;
+const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v};
+const show=(id,b)=>{const e=document.getElementById(id);if(e)e.style.display=b?'flex':'none'};
+
+let dMaking='pg',gMaking='pg';
+let dRowC=0,dSRowC=0,gSRowC=0;
+const invItems=[];
+
+function sw(id,el){
+  ['diamond','gold','invoice'].forEach(x=>document.getElementById('p-'+x).classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('p-'+id).classList.add('active');
+  el.classList.add('active');
+  if(id==='invoice')renderInv();
+}
+
+function setDM(m,el){
+  dMaking=m;
+  ['d-pg-btn','d-pct-btn','d-tnch-btn'].forEach(b=>{const e=document.getElementById(b);if(e)e.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('d-pg-wrap').style.display=m==='pg'?'block':'none';
+  document.getElementById('d-pct-wrap').style.display=m==='pct'?'block':'none';
+  document.getElementById('d-tunch-wrap').style.display=m==='tunch'?'block':'none';
+  document.getElementById('d-tunch-rate-row').style.display=m==='tunch'?'block':'none';
+  const lbl=document.getElementById('d-mval-lbl');
+  if(lbl)lbl.textContent=m==='tunch'?'Amount':'Making val';
+  if(m==='tunch'){const rc24=document.getElementById('rc-24');const te=document.getElementById('d-trate');if(rc24&&rc24.value&&te&&!te.value)te.value=parseFloat(rc24.value)/10||'';}
+  calcD();
+}
+function setGM(m,el){
+  gMaking=m;
+  ['g-pg-btn','g-pct-btn','g-tnch-btn'].forEach(b=>{const e=document.getElementById(b);if(e)e.classList.remove('on');});
+  el.classList.add('on');
+  document.getElementById('g-pg-wrap').style.display=m==='pg'?'block':'none';
+  document.getElementById('g-pct-wrap').style.display=m==='pct'?'block':'none';
+  document.getElementById('g-tunch-wrap').style.display=m==='tunch'?'block':'none';
+  document.getElementById('g-tunch-rate-row').style.display=m==='tunch'?'block':'none';
+  const lbl=document.getElementById('g-mval-lbl');
+  if(lbl)lbl.textContent=m==='tunch'?'Amount':'Making val';
+  if(m==='tunch'){const rc24=document.getElementById('rc-24');const te=document.getElementById('g-trate');if(rc24&&rc24.value&&te&&!te.value)te.value=parseFloat(rc24.value)/10||'';}
+  calcG();
+}
+
+// Diamond rows
+function addDRow(){
+  dRowC++;const n=dRowC;
+  const wrap=document.getElementById('d-rows');
+  const d=document.createElement('div');d.id='dr-'+n;d.className='drow';
+  d.innerHTML=`<input type="number" inputmode="decimal" id="dr-r-${n}" placeholder="Rate" oninput="calcD()"><input type="number" inputmode="decimal" id="dr-w-${n}" placeholder="ct" step="0.01" oninput="calcD()"><input id="dr-v-${n}" readonly><button class="rm-btn" onclick="document.getElementById('dr-${n}').remove();calcD()">✕</button>`;
+  wrap.appendChild(d);
+}
+
+function getDRows(){
+  let total=0;
+  document.querySelectorAll('[id^="dr-"]:not([id*="-r-"]):not([id*="-w-"]):not([id*="-v-"])').forEach(r=>{
+    const n=r.id.replace('dr-','');
+    const v=(parseFloat(document.getElementById('dr-r-'+n)?.value)||0)*(parseFloat(document.getElementById('dr-w-'+n)?.value)||0);
+    const vi=document.getElementById('dr-v-'+n);if(vi)vi.value=v?Math.round(v):'';
+    total+=v;
+  });
+  return total;
+}
+
+// Stone rows
+function addDSRow(){
+  dSRowC++;const n=dSRowC;
+  const wrap=document.getElementById('d-srows');
+  const d=document.createElement('div');d.id='ds-'+n;d.className='srow';
+  d.innerHTML=`<input type="number" inputmode="decimal" id="ds-r-${n}" placeholder="Value (₹)" oninput="calcD()"><input type="text" id="ds-n-${n}" placeholder="Note"><button class="rm-btn" onclick="document.getElementById('ds-${n}').remove();calcD()">✕</button>`;
+  wrap.appendChild(d);
+}
+function addGSRow(){
+  gSRowC++;const n=gSRowC;
+  const wrap=document.getElementById('g-srows');
+  const d=document.createElement('div');d.id='gs-'+n;d.className='srow';
+  d.innerHTML=`<input type="number" inputmode="decimal" id="gs-r-${n}" placeholder="Value (₹)" oninput="calcG()"><input type="text" id="gs-n-${n}" placeholder="Note"><button class="rm-btn" onclick="document.getElementById('gs-${n}').remove();calcG()">✕</button>`;
+  wrap.appendChild(d);
+}
+
+function getSRows(pfx){
+  let t=0;
+  document.querySelectorAll(`[id^="${pfx}-"]:not([id*="-r-"]):not([id*="-n-"])`).forEach(r=>{
+    t+=parseFloat(document.getElementById(r.id.replace(pfx+'-','pfx-').replace('pfx-',pfx+'-r-').replace(pfx+'-r-','').length>0?r.id+'-r-':r.id.replace(pfx+'-',pfx+'-r-'))?.value)||0;
+  });
+  return t;
+}
+
+function getDStones(){let t=0;document.querySelectorAll('[id^="ds-"]:not([id*="-r-"]):not([id*="-n-"])').forEach(r=>{t+=parseFloat(document.getElementById(r.id+'-r')?.value)||0;if(!document.getElementById(r.id+'-r'))t+=parseFloat(document.getElementById('ds-r-'+r.id.replace('ds-',''))?.value)||0;});
+// simpler approach:
+t=0;for(let i=1;i<=dSRowC;i++){const el=document.getElementById('ds-'+i);if(el)t+=parseFloat(document.getElementById('ds-r-'+i)?.value)||0;}return t;}
+function getGStones(){let t=0;for(let i=1;i<=gSRowC;i++){const el=document.getElementById('gs-'+i);if(el)t+=parseFloat(document.getElementById('gs-r-'+i)?.value)||0;}return t;}
+
+function calcD(){
+  const dTotal=getDRows();set('d-dtotal',fmt(dTotal));
+  const gR=fv('d-grate'),gW=fv('d-gwt'),gVal=gR*gW;
+  const gve=document.getElementById('d-gval');if(gve)gve.value=gVal?Math.round(gVal):'';
+  let making=0;
+  if(dMaking==='pg'){making=fv('d-labour')*gW;}
+  else if(dMaking==='pct'){making=gVal*fv('d-mpct')/100;}
+  else if(dMaking==='tunch'){
+    const tRate=fv('d-trate'); // 24K rate per gram
+    const tPct=fv('d-tpct');   // tunch %
+    making=tRate*gW*(tPct/100); // rate × weight × tunch%
+  }
+  const mve=document.getElementById('d-mval');if(mve)mve.value=making?Math.round(making):'';
+  const stones=getDStones();
+  const hasSt=stones>0;
+  document.getElementById('d-stotal-row').style.display=hasSt?'flex':'none';
+  set('d-stotal',fmt(stones));
+  const sub=dTotal+gVal+making+stones;
+  const gst=document.getElementById('d-gst').checked;
+  const gstAmt=gst?Math.round(sub*0.03):0,total=sub+gstAmt;
+  set('dr-dval',fmt(dTotal));set('dr-gval',fmt(gVal));
+  set('dr-mval',fmt(making));
+  const mlbl=document.getElementById('dr-mlbl');if(mlbl)mlbl.textContent=dMaking==='tunch'?'Tunch amount':'Making charges';
+  set('dr-sval',fmt(stones));show('dr-srow',hasSt);
+  set('dr-sub',fmt(sub));set('dr-gst',fmt(gstAmt));set('dr-total',fmt(total));
+  show('dr-gst-row',gst);
+}
+
+function calcG(){
+  const r=fv('g-rate'),w=fv('g-wt'),gVal=r*w;
+  const gve=document.getElementById('g-gval');if(gve)gve.value=gVal?Math.round(gVal):'';
+  let making=0;
+  if(gMaking==='pg'){making=fv('g-labour')*w;}
+  else if(gMaking==='pct'){making=gVal*fv('g-mpct')/100;}
+  else if(gMaking==='tunch'){
+    const tRate=fv('g-trate'); // 24K rate per gram
+    const tPct=fv('g-tpct');   // tunch %
+    making=tRate*w*(tPct/100); // rate × weight × tunch%
+  }
+  const mve=document.getElementById('g-mval');if(mve)mve.value=making?Math.round(making):'';
+  const stones=getGStones();
+  const hasSt=stones>0;
+  document.getElementById('g-stotal-row').style.display=hasSt?'flex':'none';
+  set('g-stotal',fmt(stones));
+  const sub=gVal+making+stones;
+  const gst=document.getElementById('g-gst').checked;
+  const gstAmt=gst?Math.round(sub*0.03):0,total=sub+gstAmt;
+  set('gr-gval',fmt(gVal));
+  set('gr-mval',fmt(making));
+  const mlbl=document.getElementById('gr-mlbl');if(mlbl)mlbl.textContent=gMaking==='tunch'?'Tunch amount':'Making charges';
+  set('gr-sval',fmt(stones));show('gr-srow',hasSt);
+  set('gr-sub',fmt(sub));set('gr-gst',fmt(gstAmt));set('gr-total',fmt(total));
+  show('gr-gst-row',gst);
+}
+
+function addToInv(type){
+  if(type==='diamond'){
+    const dTotal=getDRows();
+    const gR=fv('d-grate'),gW=fv('d-gwt'),gVal=gR*gW;
+    let making=0,mDesc='';
+    if(dMaking==='pg'){const l=fv('d-labour');making=l*gW;mDesc='Labour ₹'+l+'/g';}
+    else if(dMaking==='pct'){const p=fv('d-mpct');making=gVal*p/100;mDesc=p+'% making';}
+    else if(dMaking==='tunch'){const tR=fv('d-trate');const tP=fv('d-tpct');making=tR*gW*(tP/100);mDesc='Tunch '+tP+'%';}
+    const stones=getDStones();
+    const sub=dTotal+gVal+making+stones;
+    if(!sub){alert('Enter values first');return}
+    const gst=document.getElementById('d-gst').checked;
+    const itemDesc=document.getElementById('d-item-desc').value.trim();
+    const dRows=[];
+    for(let i=1;i<=dRowC;i++){const el=document.getElementById('dr-'+i);if(el){const w=parseFloat(document.getElementById('dr-w-'+i)?.value)||0;const r=parseFloat(document.getElementById('dr-r-'+i)?.value)||0;if(w||r)dRows.push(`${w}ct@₹${Math.round(r)}`);}}
+    const autoDesc='Diamond'+(dRows.length?' ('+dRows.join(', ')+')':'');
+    invItems.push({type:'diamond',desc:itemDesc||autoDesc,sub,gstOn:gst,dval:dTotal,gval:gVal,making,mDesc,stones,gwt:gW});
+  } else {
+    const r=fv('g-rate'),w=fv('g-wt'),gVal=r*w;
+    let making=0,mDesc='';
+    if(gMaking==='pg'){const l=fv('g-labour');making=l*w;mDesc='Labour ₹'+l+'/g';}
+    else if(gMaking==='pct'){const p=fv('g-mpct');making=gVal*p/100;mDesc=p+'% making';}
+    else if(gMaking==='tunch'){const tR=fv('g-trate');const tP=fv('g-tpct');making=tR*w*(tP/100);mDesc='Tunch '+tP+'%';}
+    const stones=getGStones();
+    const sub=gVal+making+stones;
+    if(!sub){alert('Enter values first');return}
+    const gst=document.getElementById('g-gst').checked;
+    const itemDesc=document.getElementById('g-item-desc').value.trim();
+    invItems.push({type:'gold',desc:itemDesc||`Gold (${w}g)`,sub,gstOn:gst,dval:0,gval:gVal,making,mDesc,stones,gwt:w});
+  }
+  // switch to invoice tab
+  const tabs=document.querySelectorAll('.tab');
+  const panels=['diamond','gold','invoice'];
+  panels.forEach(x=>document.getElementById('p-'+x).classList.remove('active'));
+  tabs.forEach(t=>t.classList.remove('active'));
+  document.getElementById('p-invoice').classList.add('active');
+  tabs[2].classList.add('active');
+  renderInv();
+}
+
+function renderInv(){
+  const list=document.getElementById('inv-list');
+  const gc=document.getElementById('inv-grand-card');
+  const allGst=document.getElementById('inv-gst-all').checked;
+  if(!invItems.length){list.innerHTML='<div class="empty">No items yet — add from Diamond or Gold tab</div>';gc.style.display='none';return}
+  let totalSub=0,totalGst=0;
+  list.innerHTML=invItems.map((item,i)=>{
+    const useGst=allGst||item.gstOn;
+    const gstAmt=useGst?Math.round(item.sub*0.03):0;
+    const total=item.sub+gstAmt;
+    totalSub+=item.sub;totalGst+=gstAmt;
+    const gstBadge=gstAmt?`<span class="badge b-g">GST ${fmt(gstAmt)}</span>`:'';
+    const stBadge=item.stones?`<span class="badge" style="background:#F5C4B3;color:#712B13">Stones ${fmt(item.stones)}</span>`:'';
+    return`<div class="inv-item"><button class="inv-rm" onclick="invItems.splice(${i},1);renderInv()">✕</button><div class="inv-item-title">${item.desc}</div><div class="inv-item-sub">${item.mDesc} · Gold ${fmt(item.gval)}${item.type==='diamond'?' · D.val '+fmt(item.dval):''}</div><div style="display:flex;gap:4px;margin-top:5px;flex-wrap:wrap">${gstBadge}${stBadge}</div><div class="inv-item-total">${fmt(total)}</div></div>`;
+  }).join('');
+  gc.style.display='block';
+  set('inv-grand',fmt(totalSub+totalGst));
+  document.getElementById('inv-sub-detail').textContent=totalGst?`Subtotal ₹${Math.round(totalSub).toLocaleString('en-IN')} + GST ₹${Math.round(totalGst).toLocaleString('en-IN')}`:`${invItems.length} item${invItems.length>1?'s':''}`;
+}
+
+function clearD(){
+  document.getElementById('d-rows').innerHTML='';
+  document.getElementById('d-srows').innerHTML='';
+  ['d-grate','d-gwt','d-gval','d-labour','d-mpct','d-mval'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('d-gst').checked=false;
+  dRowC=0;dSRowC=0;addDRow();calcD();
+}
+function clearG(){
+  document.getElementById('g-srows').innerHTML='';
+  ['g-rate','g-wt','g-gval','g-labour','g-mpct','g-mval'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  document.getElementById('g-gst').checked=false;
+  gSRowC=0;calcG();
+}
+
+function shareInvoice(){
+  if(!invItems.length){alert('No items in invoice');return}
+  const allGst=document.getElementById('inv-gst-all').checked;
+  let totalSub=0,totalGst=0;
+
+  // Calculate totals first
+  const rows=invItems.map(item=>{
+    const useGst=allGst||item.gstOn;
+    const gstAmt=useGst?Math.round(item.sub*0.03):0;
+    const total=item.sub+gstAmt;
+    totalSub+=item.sub;totalGst+=gstAmt;
+    const details=[];
+    if(item.gval)details.push('Gold: '+fmt(item.gval));
+    if(item.type==='diamond'&&item.dval)details.push('Diamond: '+fmt(item.dval));
+    if(item.making)details.push(item.mDesc+': '+fmt(item.making));
+    if(item.stones)details.push('Stones: '+fmt(item.stones));
+    if(gstAmt)details.push('GST: '+fmt(gstAmt));
+    return{desc:item.desc,total,details:details.join('  ·  ')};
+  });
+  const grandTotal=totalSub+totalGst;
+
+  // Canvas setup
+  const W=700;
+  const lineH=22;
+  const pad=40;
+
+  // Calculate height needed
+  let contentH=0;
+  contentH+=120; // header
+  contentH+=30;  // date
+  contentH+=20;  // divider
+  rows.forEach(r=>{
+    contentH+=lineH*2+10; // title + details + padding
+    contentH+=4;
+  });
+  contentH+=60; // totals
+  contentH+=80; // grand total box
+  contentH+=50; // disclaimer
+  contentH+=pad*2;
+
+  const canvas=document.createElement('canvas');
+  canvas.width=W;
+  canvas.height=contentH;
+  const ctx=canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,W,contentH);
+
+  let y=pad;
+
+  // Helper functions
+  function text(str,x,ty,size,weight,color,align){
+    ctx.font=(weight||'normal')+' '+(size||13)+'px -apple-system,BlinkMacSystemFont,Segoe UI,sans-serif';
+    ctx.fillStyle=color||'#1a1a18';
+    ctx.textAlign=align||'left';
+    ctx.fillText(str,x,ty);
+    ctx.textAlign='left';
+  }
+  function line(y1,color){
+    ctx.strokeStyle=color||'#e5e3db';
+    ctx.lineWidth=1;
+    ctx.beginPath();ctx.moveTo(pad,y1);ctx.lineTo(W-pad,y1);ctx.stroke();
+  }
+  function roundRect(x,ry,w,h,r,fill){
+    ctx.fillStyle=fill;
+    ctx.beginPath();
+    ctx.moveTo(x+r,ry);ctx.lineTo(x+w-r,ry);ctx.quadraticCurveTo(x+w,ry,x+w,ry+r);
+    ctx.lineTo(x+w,ry+h-r);ctx.quadraticCurveTo(x+w,ry+h,x+w-r,ry+h);
+    ctx.lineTo(x+r,ry+h);ctx.quadraticCurveTo(x,ry+h,x,ry+h-r);
+    ctx.lineTo(x,ry+r);ctx.quadraticCurveTo(x,ry,x+r,ry);
+    ctx.closePath();ctx.fill();
+  }
+  function badge(str,x,by,bgColor,textColor){
+    ctx.font='bold 11px sans-serif';
+    const tw=ctx.measureText(str).width;
+    const bpad=10,bh=20;
+    roundRect(x,by-14,tw+bpad*2,bh,10,bgColor);
+    ctx.fillStyle=textColor;ctx.textAlign='left';
+    ctx.fillText(str,x+bpad,by);
+  }
+
+  // ROUGH ESTIMATE badge
+  const badgeText='⚠  ROUGH ESTIMATE';
+  ctx.font='bold 12px sans-serif';
+  const bw=ctx.measureText(badgeText).width+28;
+  roundRect(W/2-bw/2,y,bw,26,13,'#FAEEDA');
+  ctx.strokeStyle='#BA7517';ctx.lineWidth=1.5;
+  const bx=W/2-bw/2;
+  ctx.beginPath();ctx.moveTo(bx+13,y);ctx.lineTo(bx+bw-13,y);ctx.quadraticCurveTo(bx+bw,y,bx+bw,y+13);ctx.lineTo(bx+bw,y+13);ctx.quadraticCurveTo(bx+bw,y+26,bx+bw-13,y+26);ctx.lineTo(bx+13,y+26);ctx.quadraticCurveTo(bx,y+26,bx,y+13);ctx.lineTo(bx,y+13);ctx.quadraticCurveTo(bx,y,bx+13,y);ctx.closePath();ctx.stroke();
+  ctx.fillStyle='#BA7517';ctx.textAlign='center';ctx.fillText(badgeText,W/2,y+17);
+  y+=40;
+
+  // Title
+  text('Jewellery Estimate',W/2,y,22,'bold','#1a1a18','center');y+=10;
+  text('💎',W/2-50,y-8,18,'','','center');
+  y+=16;
+
+  // Date
+  const dateStr=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  text('Date: '+dateStr,W/2,y,11,'normal','#6b6a65','center');y+=22;
+
+  line(y);y+=16;
+
+  // Items
+  rows.forEach((r,i)=>{
+    // Item number + name
+    text((i+1)+'.  '+r.desc,pad,y,13,'600','#1a1a18');
+    text(r.total.toLocaleString('en-IN',{style:'currency',currency:'INR',maximumFractionDigits:0}),W-pad,y,14,'bold','#412402','right');
+    y+=lineH;
+    // Details
+    text(r.details,pad+14,y,10,'normal','#6b6a65');
+    y+=lineH+6;
+    if(i<rows.length-1){ctx.strokeStyle='#f0efe9';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(pad,y-2);ctx.lineTo(W-pad,y-2);ctx.stroke();}
+    y+=4;
+  });
+
+  y+=4;line(y);y+=14;
+
+  // Subtotal / GST
+  text('Subtotal',pad,y,12,'normal','#6b6a65');
+  text(fmt(totalSub),W-pad,y,12,'normal','#6b6a65','right');y+=lineH;
+  if(totalGst>0){
+    text('GST (3%)',pad,y,12,'normal','#6b6a65');
+    text(fmt(totalGst),W-pad,y,12,'normal','#6b6a65','right');y+=lineH;
+  }
+  y+=6;
+
+  // Grand total box
+  roundRect(pad,y,W-pad*2,60,12,'#FAEEDA');
+  text('Grand Total',W/2,y+22,12,'bold','#BA7517','center');
+  text(fmt(grandTotal),W/2,y+48,24,'bold','#412402','center');
+  y+=70;
+
+  // Disclaimer
+  y+=6;
+  ctx.strokeStyle='#e5e3db';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(W-pad,y);ctx.stroke();
+  ctx.setLineDash([]);
+  y+=14;
+  text('This is a rough estimate only. Final price may vary based on',W/2,y,10,'normal','#aaa','center');y+=14;
+  text('gold rate fluctuations and actual weight at time of billing.',W/2,y,10,'normal','#aaa','center');
+
+  // Download / Share
+  const imgData=canvas.toDataURL('image/png');
+
+  if(navigator.share&&navigator.canShare){
+    canvas.toBlob(blob=>{
+      const file=new File([blob],'jewellery-estimate.png',{type:'image/png'});
+      try{
+        if(navigator.canShare({files:[file]})){
+          navigator.share({files:[file],title:'Jewellery Estimate',text:'Rough estimate'})
+          .catch(()=>downloadImg(imgData));
+        } else { downloadImg(imgData); }
+      } catch(e){ downloadImg(imgData); }
+    },'image/png');
+  } else {
+    downloadImg(imgData);
+  }
+}
+
+function downloadImg(imgData){
+  const a=document.createElement('a');
+  a.href=imgData;
+  a.download='jewellery-estimate-'+new Date().toISOString().split('T')[0]+'.png';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+}
+
+// Init
+addDRow();
+
+// Register service worker for PWA
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+</script>
+</body>
+</html>
