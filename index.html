@@ -200,10 +200,48 @@ input:checked+.tgl-sl:before{transform:translateX(20px)}
       <button class="pur-btn" onclick="setPur('d',18,this)">18K</button>
       <button class="pur-btn" onclick="setPur('d',14,this)">14K</button>
     </div>
-    <div class="row3">
+    <div class="row3" style="margin-bottom:8px">
       <div class="fg" style="margin:0"><label>Rate (₹/g)</label><input type="number" id="d-grate" inputmode="decimal" placeholder="0" oninput="calcD()"></div>
-      <div class="fg" style="margin:0"><label>Weight (g)</label><input type="number" id="d-gwt" inputmode="decimal" placeholder="0.00" step="0.01" oninput="calcD()"></div>
+      <div class="fg" style="margin:0"><label>Gross weight (g)</label><input type="number" id="d-gwt" inputmode="decimal" placeholder="0.00" step="0.01" oninput="calcD()"></div>
       <div class="fg" style="margin:0"><label>Gold val</label><input id="d-gval" readonly></div>
+    </div>
+
+    <!-- Net weight toggle -->
+    <div style="background:#faf9f6;border-radius:var(--radius);padding:10px 12px;border:1px solid var(--border)">
+      <!-- Diamond deduction toggle -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--text2)">Deduct diamond weight</span>
+        <label class="tgl"><input type="checkbox" id="d-dia-deduct" onchange="calcD()"><span class="tgl-sl"></span></label>
+      </div>
+      <div id="d-dia-deduct-row" style="display:none;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div class="fg" style="margin:0"><label>Total ct (auto)</label><input id="d-dia-ct-auto" readonly placeholder="from above" style="background:var(--card);color:#BA7517;font-weight:600"></div>
+          <div class="fg" style="margin:0"><label>= grams</label><input id="d-dia-g" readonly placeholder="auto" style="background:var(--card)"></div>
+          <div class="fg" style="margin:0"><label style="color:#BA7517">Deducted</label><input id="d-dia-ded" readonly placeholder="auto" style="background:var(--card);color:#BA7517;font-weight:600"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Auto from diamonds above · ct × 0.2 = grams</div>
+      </div>
+
+      <!-- Stone deduction toggle -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:12px;font-weight:600;color:var(--text2)">Deduct stone weight</span>
+        <label class="tgl"><input type="checkbox" id="d-stone-deduct" onchange="calcD()"><span class="tgl-sl"></span></label>
+      </div>
+      <div id="d-stone-deduct-row" style="display:none;margin-bottom:10px">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px">
+          <div class="fg" style="margin:0"><label>Stone (ct)</label><input type="number" id="d-stone-ct" inputmode="decimal" placeholder="0.00" step="0.01" oninput="calcD()"></div>
+          <div class="fg" style="margin:0"><label>= grams</label><input id="d-stone-g" readonly placeholder="auto" style="background:var(--card)"></div>
+          <div class="fg" style="margin:0"><label style="color:#BA7517">Deducted</label><input id="d-stone-ded" readonly placeholder="auto" style="background:var(--card);color:#BA7517;font-weight:600"></div>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:3px">Formula: ct × 0.2 = grams</div>
+      </div>
+
+      <!-- Net weight display -->
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;border-top:1px solid var(--border)">
+        <span style="font-size:12px;font-weight:600;color:var(--text)">Net weight</span>
+        <span style="font-size:15px;font-weight:700;color:#27500A" id="d-net-wt">— g</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:2px">Making charges calculated on net weight</div>
     </div>
   </div>
 
@@ -527,14 +565,17 @@ function addDRow(){
 }
 
 function getDRows(){
-  let total=0;
+  let total=0, totalCt=0;
   document.querySelectorAll('[id^="dr-"]:not([id*="-r-"]):not([id*="-w-"]):not([id*="-v-"])').forEach(r=>{
     const n=r.id.replace('dr-','');
-    const v=(parseFloat(document.getElementById('dr-r-'+n)?.value)||0)*(parseFloat(document.getElementById('dr-w-'+n)?.value)||0);
+    const wt=parseFloat(document.getElementById('dr-w-'+n)?.value)||0;
+    const rt=parseFloat(document.getElementById('dr-r-'+n)?.value)||0;
+    const v=rt*wt;
     const vi=document.getElementById('dr-v-'+n);if(vi)vi.value=v?Math.round(v):'';
     total+=v;
+    totalCt+=wt;
   });
-  return total;
+  return{total,totalCt};
 }
 
 // Stone rows
@@ -567,18 +608,50 @@ t=0;for(let i=1;i<=dSRowC;i++){const el=document.getElementById('ds-'+i);if(el)t
 function getGStones(){let t=0;for(let i=1;i<=gSRowC;i++){const el=document.getElementById('gs-'+i);if(el)t+=parseFloat(document.getElementById('gs-r-'+i)?.value)||0;}return t;}
 
 function calcD(){
-  const dTotal=getDRows();set('d-dtotal',fmt(dTotal));
-  const gR=fv('d-grate'),gW=fv('d-gwt'),gVal=gR*gW;
-  const gve=document.getElementById('d-gval');if(gve)gve.value=gVal?Math.round(gVal):'';
-  let making=0;
-  if(dMaking==='pg'){making=fv('d-labour')*gW;}
-  else if(dMaking==='pct'){making=gVal*fv('d-mpct')/100;}
-  else if(dMaking==='tunch'){
-    const tRate=fv('d-trate'); // 24K rate per gram
-    const tPct=fv('d-tpct');   // tunch %
-    making=tRate*gW*(tPct/100); // rate × weight × tunch%
+  const {total:dTotal,totalCt:dTotalCt}=getDRows();
+  set('d-dtotal',fmt(dTotal));
+  const gR=fv('d-grate');
+  const gWgross=parseFloat(document.getElementById('d-gwt').value)||0;
+
+  // Diamond deduction — AUTO from diamond rows above
+  const diaDeduct=document.getElementById('d-dia-deduct').checked;
+  document.getElementById('d-dia-deduct-row').style.display=diaDeduct?'block':'none';
+  let diaDedG=0;
+  if(diaDeduct){
+    diaDedG=parseFloat((dTotalCt*0.2).toFixed(3));
+    const dca=document.getElementById('d-dia-ct-auto');if(dca)dca.value=dTotalCt?dTotalCt.toFixed(2)+' ct':'0 ct';
+    const dge=document.getElementById('d-dia-g');if(dge)dge.value=diaDedG?diaDedG.toFixed(3)+'g':'';
+    const dde=document.getElementById('d-dia-ded');if(dde)dde.value=diaDedG?'-'+diaDedG.toFixed(3)+'g':'';
   }
+
+  // Stone deduction — manual entry
+  const stDeduct=document.getElementById('d-stone-deduct').checked;
+  document.getElementById('d-stone-deduct-row').style.display=stDeduct?'block':'none';
+  let stoneDedG=0;
+  if(stDeduct){
+    const stCt=parseFloat(document.getElementById('d-stone-ct').value)||0;
+    stoneDedG=parseFloat((stCt*0.2).toFixed(3));
+    const sge=document.getElementById('d-stone-g');if(sge)sge.value=stoneDedG?stoneDedG.toFixed(3)+'g':'';
+    const sde=document.getElementById('d-stone-ded');if(sde)sde.value=stoneDedG?'-'+stoneDedG.toFixed(3)+'g':'';
+  }
+
+  // Net weight
+  const gWnet=Math.max(0,parseFloat((gWgross-diaDedG-stoneDedG).toFixed(3)));
+  const netEl=document.getElementById('d-net-wt');
+  const hasDeduct=diaDeduct||stDeduct;
+  if(netEl){netEl.textContent=gWgross?(gWnet.toFixed(3)+' g'+(hasDeduct?' (net)':'')):'— g';netEl.style.color=hasDeduct?'#27500A':'var(--text2)';}
+
+  // Gold value on GROSS weight
+  const gVal=gR*gWgross;
+  const gve=document.getElementById('d-gval');if(gve)gve.value=gVal?Math.round(gVal):'';
+
+  // Making on NET weight
+  let making=0;
+  if(dMaking==='pg'){making=fv('d-labour')*gWnet;}
+  else if(dMaking==='pct'){making=gVal*fv('d-mpct')/100;}
+  else if(dMaking==='tunch'){const tR=fv('d-trate');const tP=fv('d-tpct');making=tR*gWnet*(tP/100);}
   const mve=document.getElementById('d-mval');if(mve)mve.value=making?Math.round(making):'';
+
   const stones=getDStones();
   const hasSt=stones>0;
   document.getElementById('d-stotal-row').style.display=hasSt?'flex':'none';
