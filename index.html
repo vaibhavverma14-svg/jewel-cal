@@ -641,8 +641,8 @@ function calcD(){
   const hasDeduct=diaDeduct||stDeduct;
   if(netEl){netEl.textContent=gWgross?(gWnet.toFixed(3)+' g'+(hasDeduct?' (net)':'')):'— g';netEl.style.color=hasDeduct?'#27500A':'var(--text2)';}
 
-  // Gold value on GROSS weight
-  const gVal=gR*gWgross;
+  // Gold value on NET weight
+  const gVal=gR*gWnet;
   const gve=document.getElementById('d-gval');if(gve)gve.value=gVal?Math.round(gVal):'';
 
   // Making on NET weight
@@ -697,14 +697,15 @@ function calcG(){
 function addToInv(type){
   if(type==='diamond'){
     const {total:dTotal,totalCt:dTotalCt}=getDRows();
-    const gR=fv('d-grate'),gW=parseFloat(document.getElementById('d-gwt').value)||0,gVal=gR*gW;
-    // net weight for making
+    const gR=fv('d-grate'),gW=parseFloat(document.getElementById('d-gwt').value)||0;
+    // net weight
     const diaDeduct=document.getElementById('d-dia-deduct').checked;
     const stDeduct=document.getElementById('d-stone-deduct').checked;
     const diaDedG=diaDeduct?parseFloat((dTotalCt*0.2).toFixed(3)):0;
     const stCt=stDeduct?(parseFloat(document.getElementById('d-stone-ct').value)||0):0;
     const stoneDedG=parseFloat((stCt*0.2).toFixed(3));
     const gWnet=Math.max(0,parseFloat((gW-diaDedG-stoneDedG).toFixed(3)));
+    const gVal=gR*gWnet; // gold value on NET weight
     let making=0,mDesc='';
     if(dMaking==='pg'){const l=fv('d-labour');making=l*gWnet;mDesc='Labour ₹'+l+'/g';}
     else if(dMaking==='pct'){const p=fv('d-mpct');making=gVal*p/100;mDesc=p+'% making';}
