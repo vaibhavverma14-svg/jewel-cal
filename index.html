@@ -696,12 +696,19 @@ function calcG(){
 
 function addToInv(type){
   if(type==='diamond'){
-    const dTotal=getDRows();
-    const gR=fv('d-grate'),gW=fv('d-gwt'),gVal=gR*gW;
+    const {total:dTotal,totalCt:dTotalCt}=getDRows();
+    const gR=fv('d-grate'),gW=parseFloat(document.getElementById('d-gwt').value)||0,gVal=gR*gW;
+    // net weight for making
+    const diaDeduct=document.getElementById('d-dia-deduct').checked;
+    const stDeduct=document.getElementById('d-stone-deduct').checked;
+    const diaDedG=diaDeduct?parseFloat((dTotalCt*0.2).toFixed(3)):0;
+    const stCt=stDeduct?(parseFloat(document.getElementById('d-stone-ct').value)||0):0;
+    const stoneDedG=parseFloat((stCt*0.2).toFixed(3));
+    const gWnet=Math.max(0,parseFloat((gW-diaDedG-stoneDedG).toFixed(3)));
     let making=0,mDesc='';
-    if(dMaking==='pg'){const l=fv('d-labour');making=l*gW;mDesc='Labour ₹'+l+'/g';}
+    if(dMaking==='pg'){const l=fv('d-labour');making=l*gWnet;mDesc='Labour ₹'+l+'/g';}
     else if(dMaking==='pct'){const p=fv('d-mpct');making=gVal*p/100;mDesc=p+'% making';}
-    else if(dMaking==='tunch'){const tR=fv('d-trate');const tP=fv('d-tpct');making=tR*gW*(tP/100);mDesc='Tunch '+tP+'%';}
+    else if(dMaking==='tunch'){const tR=fv('d-trate');const tP=fv('d-tpct');making=tR*gWnet*(tP/100);mDesc='Tunch '+tP+'%';}
     const stones=getDStones();
     const sub=dTotal+gVal+making+stones;
     if(!sub){alert('Enter values first');return}
